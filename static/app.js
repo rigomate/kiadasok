@@ -89,10 +89,15 @@ function renderCategoryEditor() {
       <span class="category-editor-swatch" style="background:${category.color}"></span>
       <label class="category-edit-label">NAME<input class="category-name-input" type="text" value="${escapeHtml(category.name)}" maxlength="40" required></label>
       <label class="category-edit-label">COLOR<input class="category-color-input" type="color" value="${category.color}"></label>
-      <button class="small-action" data-save-category="${category.id}">Save changes</button>
+      <button class="small-action" data-save-category="${category.id}">Save name</button>
     </article>`).join('');
-  document.querySelectorAll('[data-save-category]').forEach((button) => {
-    button.addEventListener('click', () => saveCategory(button));
+  document.querySelectorAll('.category-editor-row').forEach((row) => {
+    const colorInput = row.querySelector('.category-color-input');
+    colorInput.addEventListener('input', () => {
+      row.querySelector('.category-editor-swatch').style.background = colorInput.value;
+    });
+    colorInput.addEventListener('change', () => saveCategoryColor(row, colorInput.value));
+    row.querySelector('[data-save-category]').addEventListener('click', (event) => saveCategory(event.currentTarget));
   });
 }
 
@@ -430,8 +435,33 @@ async function saveCategory(button) {
   try {
     await request(`/api/categories/${button.dataset.saveCategory}`, { method: 'PUT', body: JSON.stringify(payload) });
     await loadData();
-    showToast('Category updated. Related filters and transactions are unchanged.');
+    showToast('Category name saved.');
   } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+async function saveCategoryColor(row, color) {
+  const categoryId = Number(row.dataset.categoryId);
+  const category = state.data.categories.find((item) => item.id === categoryId);
+  if (!category || category.color.toLowerCase() === color.toLowerCase()) return;
+  try {
+    await request(`/api/categories/${categoryId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name: category.name, color }),
+    });
+    category.color = color;
+    state.data.rules.filter((rule) => rule.category_id === categoryId).forEach((rule) => { rule.color = color; });
+    state.data.transactions.filter((transaction) => transaction.category === category.name).forEach((transaction) => { transaction.category_color = color; });
+    renderCategories();
+    renderDashboard();
+    renderTransactions();
+    renderRules();
+    renderAdvanced();
+    showToast('Category color saved.');
+  } catch (error) {
+    row.querySelector('.category-color-input').value = category.color;
+    row.querySelector('.category-editor-swatch').style.background = category.color;
     showToast(error.message, true);
   }
 }
