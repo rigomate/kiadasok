@@ -334,6 +334,35 @@ async function importFilters(file) {
   }
 }
 
+async function exportCategories() {
+  try {
+    const response = await fetch('/api/categories/export');
+    if (!response.ok) throw new Error('Could not export categories');
+    const blob = await response.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'ledger-categories.json';
+    link.click();
+    URL.revokeObjectURL(link.href);
+    showToast(`Exported ${state.data.categories.length} categories.`);
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+async function importCategories(file) {
+  try {
+    const categories = JSON.parse(await file.text());
+    const result = await request('/api/categories/import', { method: 'POST', body: JSON.stringify(categories) });
+    await loadData();
+    showToast(`Categories: ${result.added} added, ${result.updated} recolored, ${result.unchanged} unchanged.`);
+  } catch (error) {
+    showToast(error instanceof SyntaxError ? 'That file is not valid JSON.' : error.message, true);
+  } finally {
+    $('#category-file-input').value = '';
+  }
+}
+
 async function loadData() {
   state.data = await request('/api/data');
   render();
@@ -365,6 +394,9 @@ $('#add-category-button').addEventListener('click', () => {
   $('#category-dialog-error').textContent = '';
   $('#category-dialog').showModal();
 });
+$('#export-categories-button').addEventListener('click', exportCategories);
+$('#import-categories-button').addEventListener('click', () => $('#category-file-input').click());
+$('#category-file-input').addEventListener('change', (event) => { if (event.target.files[0]) importCategories(event.target.files[0]); });
 $('#category-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   try {

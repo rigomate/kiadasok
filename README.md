@@ -20,6 +20,8 @@ Filters can be moved to another deployment from the Filters view with **Export J
 
 Open **Categories** to add categories or edit their names and colors. Renaming a category keeps its existing filters linked to it.
 
+The Categories page also exports and imports a standalone versioned `ledger-categories.json` file. Import adds missing categories, updates colors for matching names, and leaves matching categories unchanged; malformed files are rejected without partial changes.
+
 ## Tests
 
 ```sh

@@ -126,6 +126,59 @@ def update_category(category_id, payload, database_path=DATABASE_PATH):
     return category_id
 
 
+def export_categories(database_path=DATABASE_PATH):
+    with connect(database_path) as db:
+        categories = [
+            {"name": row["name"], "color": row["color"]}
+            for row in db.execute("SELECT name, color FROM categories ORDER BY id")
+        ]
+    return {"version": 1, "categories": categories}
+
+
+def import_categories(payload, database_path=DATABASE_PATH):
+    if not isinstance(payload, dict) or payload.get("version") != 1:
+        raise ValueError("Unsupported category file version")
+    raw_categories = payload.get("categories")
+    if not isinstance(raw_categories, list):
+        raise ValueError("Category file must contain a categories list")
+
+    validated = []
+    names = set()
+    for category in raw_categories:
+        if not isinstance(category, dict):
+            raise ValueError("Each category must be an object")
+        name, color = validate_category(category)
+        key = name.casefold()
+        if key in names:
+            raise ValueError("Category file contains duplicate names")
+        names.add(key)
+        validated.append((name, color, key))
+
+    added = updated = unchanged = 0
+    with connect(database_path) as db:
+        existing = {
+            row["name"].casefold(): row
+            for row in db.execute("SELECT id, name, color FROM categories")
+        }
+        for name, color, key in validated:
+            category = existing.get(key)
+            if category is None:
+                cursor = db.execute(
+                    "INSERT INTO categories(name, color) VALUES (?, ?)", (name, color)
+                )
+                existing[key] = {"id": cursor.lastrowid, "name": name, "color": color}
+                added += 1
+            elif category["color"].casefold() == color.casefold():
+                unchanged += 1
+            else:
+                db.execute(
+                    "UPDATE categories SET color = ? WHERE id = ?",
+                    (color, category["id"]),
+                )
+                updated += 1
+    return {"added": added, "updated": updated, "unchanged": unchanged}
+
+
 def parse_amount(value):
     normalized = value.strip().replace(".", "").replace(",", ".")
     try:
@@ -471,6 +524,8 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == "/api/rules/export":
             return self.send_json(200, export_rules(), "ledger-filters.json")
+        if path == "/api/categories/export":
+            return self.send_json(200, export_categories(), "ledger-categories.json")
         if path == "/api/data":
             return self.send_json(200, get_data())
         if path == "/" or path.startswith("/static/"):
@@ -517,6 +572,8 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/categories":
                 category_id = create_category(payload)
                 return self.send_json(201, {"id": category_id})
+            if path == "/api/categories/import":
+                return self.send_json(200, import_categories(payload))
         except (ValueError, json.JSONDecodeError) as error:
             return self.send_json(400, {"error": str(error)})
         self.send_json(404, {"error": "Not found"})

@@ -5,8 +5,10 @@ from pathlib import Path
 from app import (
     create_category,
     export_rules,
+    export_categories,
     find_near_duplicates,
     import_csv,
+    import_categories,
     import_rules,
     initialize_database,
     rule_matches,
@@ -124,6 +126,45 @@ class ImportTests(unittest.TestCase):
             create_category(
                 {"name": "groceries", "color": "#527b55"}, self.database_path
             )
+
+    def test_category_json_round_trip_is_idempotent_and_updates_colors(self):
+        create_category(
+            {"name": "Coffee Shops", "color": "#c67644"}, self.database_path
+        )
+        exported = export_categories(self.database_path)
+        target_dir = tempfile.TemporaryDirectory()
+        try:
+            target_path = Path(target_dir.name) / "target.sqlite3"
+            initialize_database(target_path)
+            self.assertEqual(
+                import_categories(exported, target_path),
+                {"added": 1, "updated": 0, "unchanged": 9},
+            )
+            self.assertEqual(
+                import_categories(exported, target_path),
+                {"added": 0, "updated": 0, "unchanged": 10},
+            )
+            recolored = {"version": 1, "categories": [{"name": "Coffee Shops", "color": "#123456"}]}
+            self.assertEqual(
+                import_categories(recolored, target_path),
+                {"added": 0, "updated": 1, "unchanged": 0},
+            )
+            category = next(category for category in get_data(target_path)["categories"] if category["name"] == "Coffee Shops")
+            self.assertEqual(category["color"], "#123456")
+        finally:
+            target_dir.cleanup()
+
+    def test_invalid_category_json_is_atomic(self):
+        payload = {
+            "version": 1,
+            "categories": [
+                {"name": "New Group", "color": "#123456"},
+                {"name": "Broken", "color": "red"},
+            ],
+        }
+        with self.assertRaises(ValueError):
+            import_categories(payload, self.database_path)
+        self.assertNotIn("New Group", [category["name"] for category in get_data(self.database_path)["categories"]])
 
     def test_near_duplicates_allow_one_cent_but_not_two(self):
         transactions = [
