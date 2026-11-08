@@ -293,7 +293,13 @@ async function deleteRule(id) {
 }
 
 async function importFile(file) {
-  const content = await file.text();
+  const buffer = await file.arrayBuffer();
+  let content;
+  try {
+    content = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+  } catch {
+    content = new TextDecoder('windows-1252').decode(buffer);
+  }
   try {
     const result = await request('/api/import', { method: 'POST', body: JSON.stringify({ name: file.name, content }) });
     await loadData();

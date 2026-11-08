@@ -221,13 +221,20 @@ def import_csv(content, filename, database_path=DATABASE_PATH):
         "amount": "betrag",
         "currency": "währung",
     }
+    header_aliases = {
+        "auftraggeber/empf\ufffdnger": "auftraggeber/empfänger",
+        "w\ufffdhrung": "währung",
+    }
     with connect(database_path) as db:
         for row in csv.reader(content.splitlines(), delimiter=";"):
             if not row or all(not value.strip() for value in row):
                 continue
             first_cell = row[0].strip().lstrip("\ufeff").casefold()
             if first_cell == "buchung":
-                normalized_header = [value.strip().casefold() for value in row]
+                normalized_header = [
+                    header_aliases.get(value.strip().casefold(), value.strip().casefold())
+                    for value in row
+                ]
                 try:
                     column_indexes = {
                         field: normalized_header.index(label)

@@ -62,6 +62,15 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(first, {"imported": 1, "duplicates": 0, "rejected": 0})
         self.assertEqual(legacy, {"imported": 0, "duplicates": 1, "rejected": 0})
 
+    def test_ing_upload_with_replacement_character_headers_is_accepted(self):
+        direct_export = (
+            "Buchung;Wertstellungsdatum;Auftraggeber/Empf\ufffdnger;Buchungstext;"
+            "Verwendungszweck;Referenz;Betrag;W\ufffdhrung\n"
+            "15.06.2026;15.06.2026;Kaffeehaus;Lastschrift;Beleg;ref-1;-5,80;EUR\n"
+        )
+        result = import_csv(direct_export, "corrupted-header.csv", self.database_path)
+        self.assertEqual(result, {"imported": 1, "duplicates": 0, "rejected": 0})
+
     def test_filter_export_import_is_portable_and_deduplicated(self):
         create_category(
             {"name": "Custom Shop", "color": "#ad6c76"}, self.database_path
