@@ -29,6 +29,17 @@ function visibleTransactions() {
   return state.data.transactions.filter((transaction) => !transaction.duplicate_of);
 }
 
+function categoryNetTotals(transactions) {
+  const totals = new Map();
+  for (const transaction of transactions) {
+    totals.set(
+      transaction.category,
+      (totals.get(transaction.category) || 0) - transaction.amount_cents,
+    );
+  }
+  return new Map([...totals].filter(([, amount]) => amount > 0));
+}
+
 function getSelectedTransactions() {
   const limit = $('#period-select').value;
   const transactions = visibleTransactions();
@@ -90,10 +101,14 @@ function renderDashboard() {
   const monthly = new Map();
   for (const transaction of selected) {
     const key = monthKey(transaction.booked_on);
-    const current = monthly.get(key) || { spend: 0, income: 0 };
-    if (transaction.amount_cents < 0) current.spend += -transaction.amount_cents;
-    else current.income += transaction.amount_cents;
+    const current = monthly.get(key) || { spend: 0, income: 0, categoryNets: new Map() };
+    const categoryNet = (current.categoryNets.get(transaction.category) || 0) - transaction.amount_cents;
+    current.categoryNets.set(transaction.category, categoryNet);
+    if (transaction.amount_cents > 0) current.income += transaction.amount_cents;
     monthly.set(key, current);
+  }
+  for (const month of monthly.values()) {
+    month.spend = [...month.categoryNets.values()].reduce((sum, amount) => sum + Math.max(0, amount), 0);
   }
   const allKeys = [...monthly.keys()].sort();
   const currentKey = allKeys.at(-1);
@@ -127,15 +142,12 @@ function drawTrend(monthly, keys) {
     const value = monthly.get(key);
     const spendHeight = Math.max(1, value.spend / peak * 100);
     const incomeHeight = Math.max(1, value.income / peak * 100);
-    return `<div class="chart-column" title="${monthLabel(key)} ${key.slice(0, 4)} · spent ${money(value.spend)} · income ${money(value.income)}"><div class="chart-bars"><i class="chart-bar spend" style="height:${spendHeight}%"></i><i class="chart-bar income" style="height:${incomeHeight}%"></i></div><span class="chart-label">${monthLabel(key)}</span></div>`;
+    return `<div class="chart-column" title="${monthLabel(key)} ${key.slice(0, 4)} · net spend ${money(value.spend)} · income ${money(value.income)}"><div class="chart-bars"><i class="chart-bar spend" style="height:${spendHeight}%"></i><i class="chart-bar income" style="height:${incomeHeight}%"></i></div><span class="chart-label">${monthLabel(key)}</span></div>`;
   }).join('');
 }
 
 function drawCategorySummary(transactions) {
-  const totals = new Map();
-  for (const transaction of transactions) {
-    if (transaction.amount_cents < 0) totals.set(transaction.category, (totals.get(transaction.category) || 0) - transaction.amount_cents);
-  }
+  const totals = categoryNetTotals(transactions);
   const ranked = [...totals].sort((a, b) => b[1] - a[1]).slice(0, 6);
   const max = ranked[0]?.[1] || 1;
   $('#category-list').innerHTML = ranked.length ? ranked.map(([name, total]) => `<div class="category-line"><span class="category-name">${escapeHtml(name)}</span><div class="category-track"><div class="category-fill" style="width:${total / max * 100}%;background:${categoryColor(name)}"></div></div><span class="category-total">${money(total)}</span></div>`).join('') : '<p class="empty-note">No spending in this period.</p>';
@@ -146,10 +158,8 @@ function drawMonthlyCategoryCharts(transactions) {
   for (const transaction of transactions) {
     const key = monthKey(transaction.booked_on);
     if (!months.has(key)) months.set(key, new Map());
-    if (transaction.amount_cents < 0) {
-      const categories = months.get(key);
-      categories.set(transaction.category, (categories.get(transaction.category) || 0) - transaction.amount_cents);
-    }
+    const categories = months.get(key);
+    categories.set(transaction.category, (categories.get(transaction.category) || 0) - transaction.amount_cents);
   }
   const keys = [...months.keys()].sort().reverse();
   const container = $('#monthly-category-charts');
@@ -158,7 +168,7 @@ function drawMonthlyCategoryCharts(transactions) {
     return;
   }
   container.innerHTML = keys.map((key) => {
-    const categories = [...months.get(key)].sort((a, b) => b[1] - a[1]);
+    const categories = [...months.get(key)].filter(([, amount]) => amount > 0).sort((a, b) => b[1] - a[1]);
     const total = categories.reduce((sum, [, amount]) => sum + amount, 0);
     let position = 0;
     const slices = categories.map(([name, amount]) => {

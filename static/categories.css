@@ -23,6 +23,7 @@
 .monthly-category-item strong,.monthly-category-item small{font:9px var(--mono);white-space:nowrap;color:#454940}
 .monthly-category-item small{color:#85887e;text-align:right}
 .monthly-empty{font-size:10px;color:var(--muted)}
+.chart-note{margin:5px 0 0;color:var(--muted);font-size:10px}
 .duplicate-method{font-size:10px;line-height:1.55;color:var(--muted);padding:0 2px 14px}
 .duplicate-list{display:grid;gap:10px}
 .duplicate-group{background:var(--paper);border:1px solid var(--line);border-radius:5px;padding:15px 17px}
