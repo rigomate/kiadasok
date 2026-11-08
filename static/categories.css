@@ -1,0 +1,53 @@
+.category-editor-list{display:grid;gap:8px}
+.category-editor-row{display:grid;grid-template-columns:12px minmax(0,1fr) 120px auto;align-items:center;gap:16px;padding:14px 16px;background:var(--paper);border:1px solid var(--line);border-radius:5px}
+.category-editor-swatch{width:10px;height:10px;border-radius:50%}
+.category-edit-label{display:grid;gap:6px;color:var(--muted);font:9px var(--mono)}
+.category-edit-label input[type=text]{height:34px;min-width:0;padding:0 10px;border:1px solid var(--line);border-radius:4px;background:#fffefa;color:var(--ink);font:12px 'DM Sans',sans-serif;outline:none}
+.category-edit-label input[type=text]:focus,.category-name-input:focus{border-color:#9eaf82}
+.category-color-input{width:38px;height:34px;padding:3px;border:1px solid var(--line);border-radius:4px;background:#fffefa;cursor:pointer}
+.category-name-input{width:100%;height:38px;padding:0 10px;border:1px solid var(--line);border-radius:4px;background:#fffefa;color:var(--ink);font-size:12px;outline:none}
+.category-dialog-color{width:46px}
+.monthly-mix-panel{margin-top:14px;padding:20px 21px}
+.monthly-category-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));column-gap:28px;margin-top:8px}
+.monthly-category{padding:16px 0;border-bottom:1px solid var(--line);min-width:0}
+.monthly-category-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}
+.monthly-category-heading h3{margin:0;font:600 12px var(--display);color:var(--ink)}
+.monthly-category-heading>strong{font:11px var(--mono);color:#4b5148}
+.monthly-category-content{display:grid;grid-template-columns:106px minmax(0,1fr);align-items:center;gap:14px}
+.monthly-pie{width:104px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+.monthly-category-legend{display:grid;gap:6px;min-width:0}
+.monthly-category-item{display:grid;grid-template-columns:7px minmax(0,1fr) auto 28px;align-items:center;gap:7px;font-size:9px;min-width:0}
+.monthly-category-item i{width:6px;height:6px;border-radius:50%}
+.monthly-category-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#65695e}
+.monthly-category-item strong,.monthly-category-item small{font:9px var(--mono);white-space:nowrap;color:#454940}
+.monthly-category-item small{color:#85887e;text-align:right}
+.monthly-empty{font-size:10px;color:var(--muted)}
+.duplicate-method{font-size:10px;line-height:1.55;color:var(--muted);padding:0 2px 14px}
+.duplicate-list{display:grid;gap:10px}
+.duplicate-group{background:var(--paper);border:1px solid var(--line);border-radius:5px;padding:15px 17px}
+.duplicate-group-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.duplicate-group-heading .eyebrow{margin-bottom:4px}
+.duplicate-group-heading h2{margin:0;font:600 13px var(--display)}
+.duplicate-group-heading>span{font:10px var(--mono);color:var(--muted)}
+.duplicate-pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px}
+.duplicate-record{display:grid;align-content:start;gap:6px;min-width:0;padding:12px;border-radius:4px;font-size:10px;color:#777b72}
+.duplicate-kept{background:#f1f4e9;border:1px solid #e4e9d8}
+.duplicate-hidden{background:#f7f6f1;border:1px solid var(--line)}
+.duplicate-label{font:9px var(--mono);color:#72766a}
+.duplicate-hidden .duplicate-label{color:#a16655}
+.duplicate-record strong{font-size:11px;color:var(--ink)}
+.duplicate-record b{font:11px var(--mono);color:#3f443b}
+.duplicate-record code{font:9px var(--mono);color:#95978e}
+.merchant-search-link{color:inherit;text-decoration:underline;text-decoration-color:#c6ccb7;text-underline-offset:2px}
+.merchant-search-link:hover{color:#557a58;text-decoration-color:currentColor}
+@media(max-width:520px){
+  #categories-view .compact-intro{display:block}
+  #add-category-button{margin-top:15px}
+  .category-editor-row{grid-template-columns:10px minmax(0,1fr) 44px;gap:10px;padding:12px}
+  .category-edit-label:nth-of-type(2){grid-column:2}
+  .category-editor-row .small-action{grid-column:3;grid-row:1 / span 2;padding:0 7px;font-size:9px}
+  .monthly-mix-panel{padding:16px 13px}
+  .monthly-category-grid{grid-template-columns:1fr}
+  .duplicate-group{padding:12px}
+  .duplicate-pair{grid-template-columns:1fr}
+}

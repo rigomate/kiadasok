@@ -1,0 +1,12 @@
+services:
+  spendings:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - spendings-data:/data
+      - ./ing:/imports:ro
+    restart: unless-stopped
+
+volumes:
+  spendings-data:

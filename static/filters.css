@@ -1,0 +1,10 @@
+.filter-file-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+@media(max-width:800px){
+  .filter-file-actions{margin-left:auto}
+}
+
+@media(max-width:520px){
+  #rules-view .compact-intro{display:block}
+  .filter-file-actions{margin-top:16px}
+}
