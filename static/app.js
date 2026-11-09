@@ -69,6 +69,11 @@ function renderCategories() {
   const selectedCategory = categoryFilter.value;
   categoryFilter.innerHTML = '<option value="">All categories</option>' + names.map((name) => `<option>${escapeHtml(name)}</option>`).join('');
   categoryFilter.value = names.includes(selectedCategory) ? selectedCategory : '';
+  const monthFilter = $('#month-filter');
+  const selectedMonth = monthFilter.value;
+  const months = [...new Set(visibleTransactions().map((transaction) => monthKey(transaction.booked_on)))].sort().reverse();
+  monthFilter.innerHTML = '<option value="">All months</option>' + months.map((month) => `<option value="${month}">${new Date(`${month}-01T12:00:00`).toLocaleDateString('en', { month: 'long', year: 'numeric' })}</option>`).join('');
+  monthFilter.value = months.includes(selectedMonth) ? selectedMonth : '';
   $('#rule-category').innerHTML = state.data.categories.map((category) => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`).join('');
   $('#category-drops').innerHTML = state.data.categories.map((category) => `<button class="drop-category" data-category="${escapeHtml(category.name)}" style="--drop-color:${category.color}">${escapeHtml(category.name)}</button>`).join('');
   document.querySelectorAll('.drop-category').forEach((target) => {
@@ -183,9 +188,12 @@ function drawMonthlyCategoryCharts(transactions) {
     });
     const month = new Date(`${key}-01T12:00:00`).toLocaleDateString('en', { month: 'long', year: 'numeric' });
     const label = categories.map(([name, amount]) => `${name} ${money(amount)}`).join(', ');
-    const legend = categories.map(([name, amount]) => `<div class="monthly-category-item"><i style="background:${categoryColor(name)}"></i><span>${escapeHtml(name)}</span><strong>${money(amount)}</strong><small>${total ? Math.round(amount / total * 100) : 0}%</small></div>`).join('');
+      const legend = categories.map(([name, amount]) => `<button type="button" class="monthly-category-item" data-month="${key}" data-category="${escapeHtml(name)}" aria-label="Show ${escapeHtml(name)} transactions for ${escapeHtml(month)}."><i style="background:${categoryColor(name)}"></i><span>${escapeHtml(name)}</span><strong>${money(amount)}</strong><small>${total ? Math.round(amount / total * 100) : 0}%</small></button>`).join('');
     return `<article class="monthly-category"><div class="monthly-category-heading"><h3>${month}</h3><strong>${money(total)}</strong></div><div class="monthly-category-content"><div class="monthly-pie${total ? '' : ' empty'}" role="img" aria-label="${escapeHtml(month)} spending categories: ${escapeHtml(label || 'No spending')}." style="background:${total ? `conic-gradient(${slices.join(',')})` : '#e8e7df'}"></div><div class="monthly-category-legend">${legend || '<span class="monthly-empty">No spending this month</span>'}</div></div></article>`;
   }).join('');
+  container.querySelectorAll('.monthly-category-item').forEach((button) => {
+    button.addEventListener('click', () => openTransactionsFor(button.dataset.month, button.dataset.category));
+  });
 }
 
 function transactionRows(transactions, draggable = true) {
@@ -202,11 +210,12 @@ function transactionRows(transactions, draggable = true) {
 function renderTransactions() {
   const query = $('#search-input').value.trim().toLocaleLowerCase();
   const category = $('#category-filter').value;
+  const month = $('#month-filter').value;
   const sort = $('#sort-select').value;
   const transactions = visibleTransactions();
   const rows = transactions.filter((transaction) => {
     const text = `${transaction.counterparty} ${transaction.details} ${transaction.tx_type}`.toLocaleLowerCase();
-    return (!query || text.includes(query)) && (!category || transaction.category === category);
+    return (!query || text.includes(query)) && (!category || transaction.category === category) && (!month || monthKey(transaction.booked_on) === month);
   });
   if (sort === 'oldest') rows.reverse();
   if (sort === 'highest') rows.sort((a, b) => b.amount_cents - a.amount_cents);
@@ -393,16 +402,26 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 }
 
-document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => {
-  const view = button.dataset.view;
+function navigateToView(view) {
   document.querySelectorAll('.view').forEach((section) => section.classList.toggle('active', section.id === `${view}-view`));
   document.querySelectorAll('.nav-item').forEach((item) => item.classList.toggle('active', item.dataset.view === view));
   $('#page-title').textContent = { overview: 'Overview', transactions: 'Transactions', categories: 'Categories', rules: 'Filters', advanced: 'Advanced' }[view];
   window.scrollTo({ top: 0, behavior: 'smooth' });
-}));
+}
+
+function openTransactionsFor(month, category) {
+  $('#month-filter').value = month;
+  $('#category-filter').value = category;
+  $('#search-input').value = '';
+  renderTransactions();
+  navigateToView('transactions');
+}
+
+document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => navigateToView(button.dataset.view)));
 $('#period-select').addEventListener('change', renderDashboard);
 $('#search-input').addEventListener('input', renderTransactions);
 $('#category-filter').addEventListener('change', renderTransactions);
+$('#month-filter').addEventListener('change', renderTransactions);
 $('#sort-select').addEventListener('change', renderTransactions);
 $('#import-button').addEventListener('click', () => $('#file-input').click());
 $('#file-input').addEventListener('change', (event) => { if (event.target.files[0]) importFile(event.target.files[0]); });

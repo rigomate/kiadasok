@@ -18,6 +18,9 @@
 .monthly-pie{width:104px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
 .monthly-category-legend{display:grid;gap:6px;min-width:0}
 .monthly-category-item{display:grid;grid-template-columns:7px minmax(0,1fr) auto 28px;align-items:center;gap:7px;font-size:9px;min-width:0}
+.monthly-category-item{width:100%;padding:2px 3px;border:0;border-radius:3px;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.monthly-category-item:hover{background:#f3f4ed}
+.monthly-category-item:focus-visible{outline:2px solid #879a6d;outline-offset:1px}
 .monthly-category-item i{width:6px;height:6px;border-radius:50%}
 .monthly-category-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#65695e}
 .monthly-category-item strong,.monthly-category-item small{font:9px var(--mono);white-space:nowrap;color:#454940}
